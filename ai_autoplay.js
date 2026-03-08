@@ -292,8 +292,8 @@ const CSS=`
     backdrop-filter:blur(8px);font-family:'Segoe UI',sans-serif;
     user-select:none;touch-action:none;box-shadow:0 0 18px rgba(100,40,200,.3);}
   #ai-title{display:flex;align-items:center;justify-content:center;letter-spacing:3px;font-size:9px;font-weight:700;color:#6030a0;margin-bottom:10px;position:relative;}
-  #ai-min{position:absolute;right:0;top:-2px;width:18px;height:18px;border-radius:4px;border:1px solid rgba(120,60,220,.4);background:rgba(120,60,220,.1);color:#6030a0;font-size:14px;line-height:16px;text-align:center;cursor:pointer;-webkit-appearance:none;padding:0;}
-  #ai-min:active{background:rgba(120,60,220,.3);}
+  #ai-min{position:absolute;right:0;top:-2px;width:20px;height:20px;border-radius:4px;border:1px solid rgba(160,96,255,.7);background:rgba(120,60,220,.25);color:#c090ff;font-size:15px;line-height:18px;text-align:center;cursor:pointer;-webkit-appearance:none;padding:0;font-weight:700;}
+  #ai-min:active{background:rgba(160,96,255,.5);}
   #ai-panel.collapsed{width:auto;padding:6px 10px;}
   #ai-panel.collapsed #ai-body{display:none;}
   #ai-panel.collapsed #ai-title{margin-bottom:0;font-size:8px;}
