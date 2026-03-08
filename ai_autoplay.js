@@ -107,7 +107,9 @@ function pickBestCharAndMap(){
     charId=_selectedCharId;
   }else{
     const ul=CHARS.filter(c=>c.cost===0||(sd.unlockedChars||[]).includes(c.id));
-    charId=ul.reduce((b,c)=>c.cost>b.cost?c:b,ul[0]).id;
+    const maxCost=Math.max(...ul.map(c=>c.cost));
+    const top=ul.filter(c=>c.cost===maxCost);
+    charId=top[Math.floor(Math.random()*top.length)].id;
   }
   let mapIdx=0;
   for(let i=MAPS.length-1;i>=0;i--){if(i===0||(sd.completedMaps||[]).includes(MAPS[i-1].id)){mapIdx=i;break;}}
@@ -289,7 +291,12 @@ const CSS=`
     border-radius:12px;padding:12px 14px 10px;width:182px;
     backdrop-filter:blur(8px);font-family:'Segoe UI',sans-serif;
     user-select:none;touch-action:none;box-shadow:0 0 18px rgba(100,40,200,.3);}
-  #ai-title{text-align:center;letter-spacing:3px;font-size:9px;font-weight:700;color:#6030a0;margin-bottom:10px;}
+  #ai-title{display:flex;align-items:center;justify-content:center;letter-spacing:3px;font-size:9px;font-weight:700;color:#6030a0;margin-bottom:10px;position:relative;}
+  #ai-min{position:absolute;right:0;top:-2px;width:18px;height:18px;border-radius:4px;border:1px solid rgba(120,60,220,.4);background:rgba(120,60,220,.1);color:#6030a0;font-size:14px;line-height:16px;text-align:center;cursor:pointer;-webkit-appearance:none;padding:0;}
+  #ai-min:active{background:rgba(120,60,220,.3);}
+  #ai-panel.collapsed{width:auto;padding:6px 10px;}
+  #ai-panel.collapsed #ai-body{display:none;}
+  #ai-panel.collapsed #ai-title{margin-bottom:0;font-size:8px;}
   #ai-btn{width:100%;padding:8px 0;font-size:12px;font-weight:700;letter-spacing:2px;
     border-radius:7px;border:1.5px solid rgba(120,60,220,.7);background:rgba(120,60,220,.12);
     color:#8040cc;cursor:pointer;transition:all .2s;-webkit-appearance:none;}
@@ -348,10 +355,15 @@ function injectPanel(){
   if(document.getElementById('ai-panel'))return;
   const st=document.createElement('style');st.textContent=CSS;document.head.appendChild(st);
   const d=document.createElement('div');d.id='ai-panel';
-  d.innerHTML='<div id="ai-title">AI AUTO-PLAY</div><button id="ai-btn">BAT AI</button><div id="ai-status">Cho lenh...</div><hr id="ai-sep"><div id="ai-char-label">NHAN VAT</div><div id="ai-char-grid"></div><hr id="ai-sep"><div class="ai-row"><label>SKILL R</label><input id="ai-skill-r" type="range" min="100" max="400" step="20" value="280"><span id="ai-skill-val">280</span></div><div id="ai-profile">-</div><div id="ai-log">-</div>';
+  d.innerHTML='<div id="ai-title">AI AUTO-PLAY<button id="ai-min">−</button></div><div id="ai-body"><button id="ai-btn">BAT AI</button><div id="ai-status">Cho lenh...</div><hr id="ai-sep"><div id="ai-char-label">NHAN VAT</div><div id="ai-char-grid"></div><hr id="ai-sep"><div class="ai-row"><label>SKILL R</label><input id="ai-skill-r" type="range" min="100" max="400" step="20" value="280"><span id="ai-skill-val">280</span></div><div id="ai-profile">-</div><div id="ai-log">-</div></div>';
   document.body.appendChild(d);
   refreshCharGrid();
   document.getElementById('ai-btn').addEventListener('click',()=>aiEnabled?stopAI():startAI());
+  document.getElementById('ai-min').addEventListener('click',()=>{
+    const p=document.getElementById('ai-panel');
+    const collapsed=p.classList.toggle('collapsed');
+    document.getElementById('ai-min').textContent=collapsed?'+':'−';
+  });
   document.getElementById('ai-skill-r').addEventListener('input',function(){
     CFG.SKILL_RANGE=+this.value;document.getElementById('ai-skill-val').textContent=this.value;
   });
