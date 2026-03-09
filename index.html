@@ -1441,6 +1441,9 @@ const Audio = (() => {
     shadow_enter: 800, shadow_exit: 800,
     soul_harvest: 300, bleed_tick: 500,
     eagle_proc: 600, mana_activate: 400,
+    crystal_laser: 600, crystal_shatter: 800, crystal_spawn: 1200,
+    heartbeat: 1500, time_reverse: 3000, time_charge: 300,
+    flesh_impact: 150, flesh_switch: 600,
   };
 
   function init(s) {
@@ -1699,6 +1702,18 @@ const Audio = (() => {
       case 'gold':     _sfxGold(t);     break;
       case 'pickup':   _sfxPickup(t);   break;
       case 'select':   _sfxSelect(t);   break;
+
+      // map19 — Tinh Thể
+      case 'crystal_laser':   _sfxCrystalLaser(t);   break;
+      case 'crystal_shatter': _sfxCrystalShatter(t); break;
+      case 'crystal_spawn':   _sfxCrystalSpawn(t);   break;
+      // map20 — Thời Gian
+      case 'time_reverse':    _sfxTimeReverse(t);    break;
+      case 'time_charge':     _sfxTimeCharge(t);     break;
+      // map21 — Thịt Sống
+      case 'heartbeat':       _sfxHeartbeat(t);      break;
+      case 'flesh_impact':    _sfxFleshImpact(t);    break;
+      case 'flesh_switch':    _sfxFleshSwitch(t);    break;
     }
   }
 
@@ -2096,6 +2111,76 @@ const Audio = (() => {
   }
 
   function _sfxSelect(t) { _tone(440,'sine',0.1,0.15,t); }
+
+  // ── Map 19 — Tinh Thể SFX ──────────────────────────────────────────
+  function _sfxCrystalLaser(t) {
+    // Tiếng laser kích hoạt — sweep cao lên rồi duy trì
+    _tone(800, 'sawtooth', 0.06, 0.12, t, 2400);
+    _tone(1200, 'sine', 0.08, 0.18, t + 0.03, 3200);
+    _noise(0.05, 0.06, t, 5000);
+    // Hum duy trì
+    _tone(400, 'triangle', 0.04, 0.35, t + 0.08, 380);
+  }
+  function _sfxCrystalShatter(t) {
+    // Tiếng vỡ tinh thể — glass break + resonance ping
+    _noise(0.12, 0.40, t, 4000);
+    _tone(2800, 'sine', 0.06, 0.12, t, 800);
+    _tone(4200, 'sine', 0.04, 0.18, t + 0.02);
+    _tone(1600, 'triangle', 0.05, 0.28, t + 0.04, 600);
+    // Afterring
+    _tone(5600, 'sine', 0.03, 0.4, t + 0.06);
+  }
+  function _sfxCrystalSpawn(t) {
+    // Tinh thể hồi sinh — ascending arpeggio
+    [440, 660, 880, 1100].forEach((f, i) => _tone(f, 'triangle', 0.12, 0.08, t + i * 0.05));
+    _noise(0.02, 0.06, t + 0.15, 6000);
+  }
+
+  // ── Map 20 — Thời Gian SFX ─────────────────────────────────────────
+  function _sfxTimeReverse(t) {
+    // Nghịch Lưu — whoosh ngược + reverb nặng
+    _tone(1200, 'sawtooth', 0.08, 0.4, t, 60);   // sweep xuống mạnh
+    _tone(600, 'sine', 0.12, 0.45, t, 40);
+    _noise(0.08, 0.25, t + 0.1);
+    // Echo tail
+    [0.2, 0.4, 0.6].forEach((d, i) => {
+      setTimeout(() => {
+        if (!ctx || !sfxGain) return;
+        const t2 = ctx.currentTime;
+        _tone(400 - i * 80, 'sine', 0.06, 0.20 - i * 0.05, t2, 100);
+      }, d * 1000);
+    });
+  }
+  function _sfxTimeCharge(t) {
+    // Charged shot thời gian — build up
+    _tone(300, 'sine', 0.06, 0.15, t, 900);
+    _tone(600, 'triangle', 0.04, 0.12, t + 0.05, 1600);
+    _noise(0.02, 0.04, t + 0.1, 3000);
+  }
+
+  // ── Map 21 — Thịt Sống SFX ─────────────────────────────────────────
+  function _sfxHeartbeat(t) {
+    // Nhịp tim — hai nhịp "lub-dub"
+    _tone(55, 'sine', 0.10, 0.45, t, 35);
+    _noise(0.06, 0.18, t);
+    setTimeout(() => {
+      if (!ctx || !sfxGain) return;
+      const t2 = ctx.currentTime;
+      _tone(45, 'sine', 0.08, 0.35, t2, 30);
+      _noise(0.04, 0.12, t2);
+    }, 320);
+  }
+  function _sfxFleshImpact(t) {
+    // Wet impact — thịt bị đánh
+    _tone(100, 'sine', 0.08, 0.10, t, 50);
+    _noise(0.07, 0.30, t);
+    _tone(60, 'sine', 0.05, 0.12, t + 0.02, 30);
+  }
+  function _sfxFleshSwitch(t) {
+    // Lõi thật xoay — tiếng ướt nhẹ
+    _noise(0.04, 0.15, t, 800);
+    _tone(180, 'sine', 0.04, 0.08, t, 120);
+  }
 
   function _sfxGold(t) {
     _tone(880,'sine',0.07,0.1,t);
@@ -2934,9 +3019,9 @@ const UI = (() => {
     const save = Save.get();
 
     
-    const TIER_UNLOCK_MAP = [null, 'map03', 'map06', 'map09', 'map12', 'map15']; 
-    const TIER_NAMES = ['', 'CUNG 1 — Nhập Môn', 'CUNG 2 — Thử Thách', 'CUNG 3 — Áp Lực', 'CUNG 4 — Đỉnh Cao', 'CUNG 5 — Tận Cùng', 'CUNG 6 — Siêu Việt'];
-    const TIER_COLORS = ['','#c8960c','#60c8ff','#a060ff','#ff6060','#ffd700','#00ffcc'];
+    const TIER_UNLOCK_MAP = [null, 'map03', 'map06', 'map09', 'map12', 'map15', 'map18']; 
+    const TIER_NAMES = ['', 'CUNG 1 — Nhập Môn', 'CUNG 2 — Thử Thách', 'CUNG 3 — Áp Lực', 'CUNG 4 — Đỉnh Cao', 'CUNG 5 — Tận Cùng', 'CUNG 6 — Hủy Diệt', 'CUNG 7 — Siêu Việt'];
+    const TIER_COLORS = ['','#c8960c','#60c8ff','#a060ff','#ff6060','#ffd700','#00ffcc','#ff60d0'];
 
     
     const tierGroups = {};
@@ -3198,8 +3283,11 @@ const UI = (() => {
           '<b>Cung 2 (Map 4–6):</b> ~1400–2000 ◈/run — Có cơ chế đặc biệt, reward xứng đáng.<br>' +
           '<b>Cung 3 (Map 7–9):</b> 250–350 ◈/run — Áp lực tăng rõ rệt.<br>' +
           '<b>Cung 4 (Map 10–12):</b> 380–500 ◈/run — Cần Tiềm Năng đủ mạnh.<br>' +
-          '<b>Cung 5 (Map 13–15):</b> 550–800 ◈/run — Endgame, thử thách tối đa.<br><br>' +
-          'Mỗi cung chỉ cần vượt <b>map thứ 3 (boss cung)</b> để mở cung tiếp theo. Hai map đầu của cung có thể farm lại bất cứ lúc nào.'));
+          '<b>Cung 5 (Map 13–15):</b> 550–800 ◈/run — Endgame, thử thách tối đa.<br>' +
+          '<b>Cung 6 (Map 16–18):</b> 620–820 ◈/run — Hủy Diệt, quái cơ chế mới cực mạnh.<br>' +
+          '<b>Cung 7 (Map 19–20):</b> 680–950 ◈/run — Siêu Việt, boss cơ chế chưa từng thấy.<br>' +
+          '<b>Cung 8 (Map 21):</b> 800–1080 ◈/run — Nguyên Thủy, khó nhất game.<br><br>' +
+          'Mỗi cung chỉ cần vượt <b>map cuối cung</b> để mở cung tiếp theo. Hai map đầu của cung có thể farm lại bất cứ lúc nào.'));
       entry('⭐','Thưởng Thành Tích Trong Run',
         p('Ngoài vàng từ quái, mỗi run có thể nhận thêm vàng bonus từ các cột mốc sau:<br><br>' +
           '⚡ <b>100 kill trước phút thứ 2:</b> +30×tier ◈ (T1: +30, T6: +180)<br>' +
@@ -3363,13 +3451,16 @@ const UI = (() => {
           '🌑 <b>Nguyền Diệt Vong (Epic):</b> Khi hạ quái: kích nổ AoE 60đv (×0.3 totalDmg) tại vị trí của chúng.'));
 
     } else if (tab === 'maps') {
-      const tierNames = ['','Cung 1 — Nhập Môn','Cung 2 — Thử Thách','Cung 3 — Áp Lực','Cung 4 — Đỉnh Cao','Cung 5 — Tận Cùng'];
+      const tierNames = ['','Cung 1 — Nhập Môn','Cung 2 — Thử Thách','Cung 3 — Áp Lực','Cung 4 — Đỉnh Cao','Cung 5 — Tận Cùng','Cung 6 — Hủy Diệt','Cung 7 — Siêu Việt','Cung 8 — Nguyên Thủy'];
       const tierPurpose = ['',
         'Farm ổn định, lý tưởng để tích vàng đầu game.',
         'Giới thiệu cơ chế — cần hiểu rõ trước khi leo cung 3.',
         'Áp lực tăng rõ rệt — nên có ít nhất 2 nút Tiềm Năng.',
         'Cần Tiềm Năng đủ mạnh — đừng leo khi chưa sẵn sàng.',
         'Endgame — thử thách tối đa, thưởng cao nhất.',
+        'Giới hạn mới — cơ chế độc và quái cực mạnh. Đỉnh tier 6.',
+        'Siêu Việt — 2 map mới tier 7, cơ chế chưa từng thấy.',
+        'Nguyên Thủy — map cuối cùng, độ khó cực đại, thưởng cao nhất game.',
       ];
       let lastTier = 0;
       MAPS.forEach((m, i) => {
@@ -3520,8 +3611,29 @@ const UI = (() => {
           {i:'💠',n:'Annihilator Tinh Anh ⭐',hp:8250,d:537,s:138,ai:'Vòng cánh',elite:true,t:'Xuất hiện thêm từ stack 3 Siêu Việt Thể. HP và DMG tăng theo mỗi stack — nguy hiểm hơn bất kỳ boss nào Tier 1-4.'},
           {i:'💠',n:'Thượng Đế Hủy Diệt',hp:500000,d:398,s:90,ai:'BOSS',boss:true,t:'Tích Siêu Việt Thể mỗi lần dùng skill (tối đa 20 stack): +6% SPD và +5% DMG/stack — boss mạnh dần không ngừng. Giai đoạn 2: 8–12 tia xoáy. Giai đoạn 3: 3 Lõi Siêu Việt xuất hiện, mỗi lõi còn sống cộng thêm stack/skill. Hạ boss càng nhanh càng nhẹ.'},
         ]},
+        {map:'Map 19 — Rừng Tinh Thể',icon:'💎',tier:7,e:[
+          {i:'💠',n:'Crystal Golem',  hp:1400,d:220,s:45, ai:'Lao thẳng',  t:'HP cao nhất map (1400) nhưng chậm nhất. Đặc điểm: 30% phản lại đạn bắn vào theo hướng ngẫu nhiên — cẩn thận với đạn phản khi dùng vũ khí homing/bounce.'},
+          {i:'🔷',n:'Prism Shade',    hp:480, d:170,s:120,ai:'Vòng cánh',  t:'Tốc độ cao, tiếp cận từ hông. Khi HP < 50% tách thành 2 bản sao nhỏ hơn — mỗi bản sao có HP còn lại / 2. Ưu tiên tiêu diệt nhanh trước khi tách.'},
+          {i:'✨',n:'Resonance Mage', hp:620, d:195,s:55, ai:'Tấn công xa',t:'Đứng yên bắn tia tinh thể. Nếu sống > 5 giây: buff toàn bộ tinh thể trong phạm vi → lưới laser cộng hưởng nguy hiểm hơn. Ưu tiên tiêu diệt trước Crystal Golem.'},
+          {i:'✨',n:'Resonance Mage Tinh Anh ⭐',hp:3100,d:487,s:66,ai:'Tấn công xa',elite:true,t:'DMG và HP tăng 5×/2.5×. Buff tinh thể AoE lớn hơn và nhanh hơn — cực nguy hiểm nếu để sống lâu trong khi lưới laser đang hoạt động.'},
+          {i:'💎',n:'Tinh Thể Vương', hp:600000,d:380,s:75,ai:'BOSS',boss:true,t:'3 Lõi Tinh Thể vệ tinh — mỗi lõi còn sống giảm 20% ST nhận (3 lõi = −60%). Phá lõi trước để burst boss. Khi lõi vỡ: burst 12 đạn. Phase 3: tái sinh lõi mỗi 8 giây + laser 16 hướng xoay liên tục.'},
+        ]},
+        {map:'Map 20 — Đền Thời Khắc',icon:'⏳',tier:7,e:[
+          {i:'⚔️',n:'Time Knight',    hp:1050,d:240,s:80, ai:'Lao thẳng',  t:'Khi chết để lại "bóng thời gian" tại chỗ 4 giây — tiếp xúc bóng nhận DMG tương đương. Di chuyển ra khỏi vị trí xác ngay sau khi hạ.'},
+          {i:'⌛',n:'Hourglass Mage', hp:560, d:200,s:65, ai:'Tấn công xa',t:'Định kỳ cast vùng slow 50% bán kính 80px trong 3 giây — cực nguy hiểm khi kết hợp với Nghịch Lưu Thời Gian. Tiêu diệt trước khi cast.'},
+          {i:'👻',n:'Temporal Wraith',hp:320, d:220,s:200,ai:'Vòng cánh',  t:'HP thấp nhất nhưng nhanh nhất map (200). Ẩn mình định kỳ, chỉ hiện ra để tấn công. DMG 220 — trúng 1 đòn là mất HP đáng kể.'},
+          {i:'👻',n:'Temporal Wraith Tinh Anh ⭐',hp:1600,d:550,s:240,ai:'Vòng cánh',elite:true,t:'DMG 550 + tốc 240 — tiếp cận từ hông khi đang ẩn. Nguy hiểm nhất khi Nghịch Lưu đảo đạn đang hoạt động.'},
+          {i:'⌛',n:'Thời Thần',      hp:690000,d:415,s:90,ai:'BOSS',boss:true,t:'Bóng Pha: chuyển phase tạo bóng lặp lại pattern cũ delay 2 giây. Phase 3: bóng phase 1 + 2 đồng thời (3 entity bắn cùng lúc) + Nghịch Lưu riêng mỗi 10 giây. Học pattern từ phase 1 vì nó lặp lại mãi.'},
+        ]},
+        {map:'Map 21 — Vực Thịt Sống',icon:'🫀',tier:8,e:[
+          {i:'🐛',n:'Flesh Crawler',  hp:380, d:185,s:140,ai:'Lao thẳng',  t:'Chui dưới sàn di chuyển — không thể bị tấn công khi đang chui. Nhảy lên tấn công bất ngờ từ dưới. Nguy hiểm nhất khi arena đang co lại.'},
+          {i:'🤢',n:'Bile Spitter',   hp:520, d:160,s:60, ai:'Tấn công xa',t:'Bắn acid blob tạo vũng acid tại điểm rơi: 40 DMG/giây × 5 giây. Nhiều con kết hợp với arena co = sàn nguy hiểm liên tục.'},
+          {i:'🫀',n:'Meat Titan',     hp:2200,d:250,s:40, ai:'Lao thẳng',  t:'HP cao nhất game thường (2200) nhưng chậm nhất. Khi chết không chết ngay — nổ ra 3–4 Flesh Crawler con. Phá khoảng cách trước khi hạ.'},
+          {i:'🫀',n:'Meat Titan Tinh Anh ⭐',hp:11000,d:625,s:48,ai:'Lao thẳng',elite:true,t:'HP 11000 + DMG 625. Khi chết nổ ra 5–6 Flesh Crawler — xuất hiện lúc arena co là tình huống nguy hiểm nhất map.'},
+          {i:'🫁',n:'Hồn Thể Nguyên Thủy',hp:900000,d:440,s:70,ai:'BOSS',boss:true,t:'5 mảnh thể di chuyển độc lập, chỉ 1 Lõi Thật — đánh sai không trừ HP. Lõi pulse sáng 0.15s trước khi xoay. Phase 3: arena co liên tục + Lõi xoay mỗi 2.5 giây. Quan sát kỹ hiệu ứng pulse để nhận biết Lõi.'},
+        ]},
       ];
-      const _tc=['','#88cc44','#ffcc00','#ff9040','#ff5050','#cc40ff','#00ffcc'];
+      const _tc=['','#88cc44','#ffcc00','#ff9040','#ff5050','#cc40ff','#00ffcc','#8060ff','#ff2050'];
       MCED.forEach(md=>{
         const tc=_tc[md.tier]||'#888';
         let rows='';
@@ -5393,6 +5505,39 @@ const MAPS = [
     difficulty:6, enemyTypes:['annihilator','executor','obliterator'],
     specialMech:'ascensionMode', bgPattern:'apex',
     tier:6, goldMin:620, goldMax:820,
+  },
+  {
+    id:'map19', name:'Rừng Tinh Thể', icon:'💎',
+    bgColor:'linear-gradient(135deg,#020010,#06001a)',
+    groundColor:'#0a0028', wallColor:'#1a0060',
+    mechDesc:'Cộng Hưởng Tinh Thể: mỗi 25 giây 4–6 tinh thể kích hoạt lưới laser lam — bất kỳ ai đi vào tia nhận 80 ST/giây trong 4 giây. Tia cảnh báo 0.8 giây trước khi phóng. Tinh thể vỡ rơi exp gem.',
+    bossName:'Tinh Thể Vương', bossIcon:'💎',
+    bossDesc:'3 Lõi Tinh Thể vệ tinh — mỗi lõi còn sống giảm 60% ST nhận từ hướng đó. Phá lõi trước mới burst được boss. Khi lõi vỡ: burst 12 đạn tức thì từ vị trí lõi. Giai đoạn 2: slam trễ 0.6s tại vị trí người chơi. Giai đoạn 3: tái sinh lõi mỗi 8s + laser xoay liên tục.',
+    difficulty:7, enemyTypes:['crystal_golem','prism_shade','resonance_mage'],
+    specialMech:'crystalResonance', bgPattern:'crystal',
+    tier:7, goldMin:680, goldMax:900,
+  },
+  {
+    id:'map20', name:'Đền Thời Khắc', icon:'⏳',
+    bgColor:'linear-gradient(135deg,#1a1000,#100800)',
+    groundColor:'#251800', wallColor:'#402800',
+    mechDesc:'Nghịch Lưu Thời Gian: mỗi 40 giây toàn bộ đạn địch đang bay bị đảo ngược hướng trong 3 giây — biết cách lợi dụng để biến đạn thành vũ khí.',
+    bossName:'Thời Thần', bossIcon:'⌛',
+    bossDesc:'Cơ chế Bóng Pha: khi chuyển phase tạo bóng ma lặp lại toàn bộ pattern cũ với delay 2 giây. Phase 3: bóng phase 1 + 2 đồng thời hoạt động. Boss thật kích Nghịch Lưu riêng mỗi 10 giây — đạn của chính mình trở thành mối nguy hiểm.',
+    difficulty:7, enemyTypes:['time_knight','hourglass_mage','temporal_wraith'],
+    specialMech:'timeDistortion', bgPattern:'timple',
+    tier:7, goldMin:720, goldMax:950,
+  },
+  {
+    id:'map21', name:'Vực Thịt Sống', icon:'🫀',
+    bgColor:'linear-gradient(135deg,#200008,#180005)',
+    groundColor:'#2d0010', wallColor:'#400018',
+    mechDesc:'Hơi Thở Vực: arena co lại 15% mỗi 15 giây trong 3 giây rồi phồng trở lại — trong khi co: quái tăng 40%, người chơi +20% ST. Đứng ở biên khi co là cái chết.',
+    bossName:'Hồn Thể Nguyên Thủy', bossIcon:'🫁',
+    bossDesc:'5 mảnh thể di chuyển độc lập, chỉ 1 Lõi Thật tại mỗi thời điểm — đánh sai mảnh không trừ HP boss. Lõi xoay vị trí mỗi 6/4/2.5s theo phase. Phase 2: 2 mảnh giả bắn nhiều đạn hơn để đánh lạc hướng. Phase 3: arena ở trạng thái co liên tục — Lõi xoay rất nhanh.',
+    difficulty:8, enemyTypes:['flesh_crawler','bile_spitter','meat_titan'],
+    specialMech:'livingFlesh', bgPattern:'flesh',
+    tier:7, goldMin:800, goldMax:1080,
   },
 ];
 
@@ -7937,6 +8082,9 @@ class Enemy {
       case 'map16': this._bossSpiritKing(player);  break;
       case 'map17': this._bossAbyssChaos(player);  break;
       case 'map18': this._bossAnnihilator(player); break;
+      case 'map19': this._bossCrystalKing(player); break;
+      case 'map20': this._bossTimeDemon(player);   break;
+      case 'map21': this._bossFleshmass(player);   break;
       default:      this._bossGenericSkill(player); break;
     }
   }
@@ -8486,6 +8634,270 @@ class Enemy {
   }
 
   
+  // ── MAP 19: Tinh Thể Vương ──────────────────────────────────────────
+  _bossCrystalKing(player) {
+    const c = '#8060ff';
+    if (!this._ckCores) {
+      this._ckCores = [];
+      this._ckCoreRegen = 0;
+      this._ckLaserAngle = 0;
+    }
+    this._ckLaserAngle += 0.06 * (1 + (this.phase - 1) * 0.5);
+
+    // Lõi Tinh Thể vệ tinh
+    if (this._ckCores.length === 0 && this.phase >= 1) {
+      for (let k = 0; k < 3; k++) {
+        const ca = (k / 3) * Math.PI * 2;
+        const core = new Enemy(
+          this.x + Math.cos(ca) * 130, this.y + Math.sin(ca) * 130,
+          { hp: 18000 + this.phase * 8000, dmg: this.dmg * 0.4, spd: 0, r: 14, exp: 25, gold: 0,
+            icon:'💎', color:'#60a0ff', isBoss:false, isElite:true, ai:'ranged' }
+        );
+        core.name = 'Lõi Tinh Thể';
+        core._isCrystalCore = true;
+        core._coreIndex = k;
+        enemies.push(core);
+        this._ckCores.push(core);
+      }
+    }
+
+    // Phase 3: tái sinh lõi sau 8 giây
+    if (this.phase === 3) {
+      this._ckCoreRegen = (this._ckCoreRegen || 0) + 0.016;
+      if (this._ckCoreRegen >= 8) {
+        this._ckCoreRegen = 0;
+        const deadIdx = [0,1,2].find(k => !this._ckCores[k] || this._ckCores[k].dead);
+        if (deadIdx !== undefined) {
+          const ca = (deadIdx / 3) * Math.PI * 2;
+          const newCore = new Enemy(
+            this.x + Math.cos(ca) * 130, this.y + Math.sin(ca) * 130,
+            { hp: 28000, dmg: this.dmg * 0.4, spd: 0, r: 14, exp: 15, gold: 0,
+              icon:'💎', color:'#60a0ff', isBoss:false, isElite:true, ai:'ranged' }
+          );
+          newCore.name = 'Lõi Tinh Thể'; newCore._isCrystalCore = true;
+          enemies.push(newCore); this._ckCores[deadIdx] = newCore;
+          Audio.playSFX('crystal_spawn');
+          Toast.show('💎 Lõi Tinh Thể tái sinh!');
+        }
+      }
+    }
+
+    // Đếm lõi còn sống — giảm 60% DMG nhận từ boss theo số lõi
+    const liveCores = this._ckCores.filter(e => e && !e.dead).length;
+    this._dmgReduction = liveCores * 0.20; // mỗi lõi giảm 20%, 3 lõi = 60%
+
+    if (this.phase === 1) {
+      // Laser 8 hướng xoay chậm
+      for (let i = 0; i < 8; i++) {
+        const a = this._ckLaserAngle + (i / 8) * Math.PI * 2;
+        Game.spawnProjectile({ x:this.x, y:this.y, vx:Math.cos(a)*340, vy:Math.sin(a)*340,
+          dmg:this.dmg*0.9, r:9, life:2.5, color:'#80c0ff', owner:'enemy' });
+      }
+      Audio.playSFX('crystal_laser');
+    } else if (this.phase === 2) {
+      // Slam tại vị trí player sau 0.6s
+      const tx = player.x, ty = player.y;
+      Game.rings && Game.rings.push(new RingEffect(tx, ty, 90, c));
+      setTimeout(() => {
+        if (this.dead || !Game.player) return;
+        Game.explosionAt(tx, ty, 90, this.dmg * 2.2, c);
+        Audio.playSFX('slam'); Game.camera.addShake(14);
+      }, 600);
+      // Laser 12 hướng xoay nhanh hơn
+      for (let i = 0; i < 12; i++) {
+        const a = this._ckLaserAngle + (i / 12) * Math.PI * 2;
+        Game.spawnProjectile({ x:this.x, y:this.y, vx:Math.cos(a)*380, vy:Math.sin(a)*380,
+          dmg:this.dmg*0.85, r:9, life:2.5, color:'#a080ff', owner:'enemy' });
+      }
+    } else {
+      // Phase 3: laser xoay liên tục 16 hướng + slam kép
+      for (let i = 0; i < 16; i++) {
+        const a = this._ckLaserAngle + (i / 16) * Math.PI * 2;
+        Game.spawnProjectile({ x:this.x, y:this.y, vx:Math.cos(a)*420, vy:Math.sin(a)*420,
+          dmg:this.dmg*0.9, r:9, life:2.8, color:'#c0a0ff', owner:'enemy' });
+      }
+      [0, 350].forEach(delay => setTimeout(() => {
+        if (this.dead || !Game.player) return;
+        const tx = Game.player.x, ty = Game.player.y;
+        Game.rings && Game.rings.push(new RingEffect(tx, ty, 80, c));
+        setTimeout(() => {
+          if (!Game.player) return;
+          Game.explosionAt(tx, ty, 80, this.dmg * 1.8, c); Audio.playSFX('slam');
+        }, 600);
+      }, delay));
+      Game.camera.addShake(16);
+      Audio.playSFX('crystal_laser');
+    }
+
+    // Khi lõi chết: burst 12 đạn từ vị trí lõi
+    this._ckCores.forEach(core => {
+      if (core && !core._burstDone && core.hp <= 0) {
+        core._burstDone = true;
+        for (let i = 0; i < 12; i++) {
+          const a = (i / 12) * Math.PI * 2;
+          Game.spawnProjectile({ x:core.x, y:core.y, vx:Math.cos(a)*300, vy:Math.sin(a)*300,
+            dmg:this.dmg * 1.4, r:10, life:2.2, color:'#60a0ff', owner:'enemy' });
+        }
+        Audio.playSFX('crystal_shatter');
+        Game.camera.addShake(18);
+        Game.particles.spawn(core.x, core.y, { count:20, color:'#8060ff', speedMin:100, speedMax:350, life:0.7 });
+      }
+    });
+  }
+
+  // ── MAP 20: Thời Thần ────────────────────────────────────────────────
+  _bossTimeDemon(player) {
+    const c = '#ffe060';
+    if (!this._tdGhosts) {
+      this._tdGhosts = [];   // bóng pha
+      this._tdSelfRevTimer = 0;
+    }
+
+    // Thu thập pattern bắn để ghost lặp lại sau 2 giây
+    const firePattern = (srcX, srcY, phase, dmgMult) => {
+      if (phase === 1) {
+        // Xoáy 10 đạn slow
+        for (let i = 0; i < 10; i++) {
+          const a = (i / 10) * Math.PI * 2 + this.animT * 0.5;
+          Game.spawnProjectile({ x:srcX, y:srcY, vx:Math.cos(a)*200, vy:Math.sin(a)*200,
+            dmg:this.dmg*0.8*dmgMult, r:9, life:3.5, color:c, owner:'enemy', slow:0.5 });
+        }
+        // Charged shot nhắm thẳng
+        const dx = player.x - srcX, dy = player.y - srcY;
+        const len = Math.sqrt(dx*dx+dy*dy)||1;
+        Game.spawnProjectile({ x:srcX, y:srcY, vx:(dx/len)*380, vy:(dy/len)*380,
+          dmg:this.dmg*2.0*dmgMult, r:14, life:2.5, color:'#fff0a0', owner:'enemy' });
+        Audio.playSFX('time_charge');
+      } else if (phase === 2) {
+        for (let s = 0; s < 3; s++) {
+          const baseA = (s / 3) * Math.PI * 2 + this.animT * 0.4;
+          for (let i = 0; i < 5; i++) {
+            const a = baseA + (i / 5) * Math.PI * (2/3);
+            Game.spawnProjectile({ x:srcX, y:srcY, vx:Math.cos(a)*270, vy:Math.sin(a)*270,
+              dmg:this.dmg*0.85*dmgMult, r:9, life:3, color:'#ffd020', owner:'enemy' });
+          }
+        }
+        Audio.playSFX('time_charge');
+      } else {
+        // Phase 3: wave hỗn loạn
+        for (let i = 0; i < 14; i++) {
+          const a = (i / 14) * Math.PI * 2 + Math.random() * 0.3;
+          const spd = 220 + Math.random() * 160;
+          Game.spawnProjectile({ x:srcX, y:srcY, vx:Math.cos(a)*spd, vy:Math.sin(a)*spd,
+            dmg:this.dmg*0.9*dmgMult, r:9, life:3.5, color:'#ffffa0', owner:'enemy' });
+        }
+        // Boss kích Nghịch Lưu riêng mỗi 10 giây
+        this._tdSelfRevTimer += 0.016;
+        if (this._tdSelfRevTimer >= 10) {
+          this._tdSelfRevTimer = 0;
+          window._timeRevActive = true; window._timeRevTimer = 2.0;
+          Toast.show('⌛ Thời Thần — Nghịch Lưu Thần Thánh!', 2500);
+          Audio.playSFX('time_reverse');
+        }
+        Audio.playSFX('time_charge');
+      }
+    };
+
+    // Bắn từ boss thật
+    firePattern(this.x, this.y, this.phase, 1.0);
+
+    // Tạo ghost khi chuyển phase
+    const ghInfo = { x: this.x, y: this.y, phase: this.phase - 1 };
+    if (this.phase >= 2 && this._tdGhosts.length < 2 && !this._tdGhosts.find(g => g.forPhase === this.phase)) {
+      this._tdGhosts.push({ x:this.x, y:this.y, forPhase:this.phase, timer:0 });
+    }
+
+    // Ghost bắn với delay 2 giây
+    this._tdGhosts.forEach(g => {
+      g.timer += 0.016;
+      if (g.timer >= 2.0) {
+        g.timer = 0;
+        // hiệu ứng ghost visual
+        Game.particles && Game.particles.spawn(g.x, g.y, { count:6, color:'rgba(255,220,80,0.5)', speedMin:20, speedMax:80, life:0.4 });
+        firePattern(g.x, g.y, g.forPhase - 1, 0.65);
+      }
+    });
+
+    if (this.phase === 3) Game.camera.addShake(8);
+  }
+
+  // ── MAP 21: Hồn Thể Nguyên Thủy ─────────────────────────────────────
+  _bossFleshmass(player) {
+    const c = '#ff2050';
+    if (!this._fmFragments) {
+      // Khởi tạo 5 mảnh
+      this._fmFragments = [];
+      this._fmTrueCore = 0; // index lõi thật
+      this._fmCoreSwitchTimer = 0;
+      const coreSwitchInterval = [6, 4, 2.5];
+      this._fmInterval = coreSwitchInterval[0];
+      for (let k = 0; k < 5; k++) {
+        const a = (k / 5) * Math.PI * 2;
+        this._fmFragments.push({ orbitAngle: a, orbitR: 110, orbitSpeed: 0.5, pulseT: Math.random() * 10 });
+      }
+    }
+
+    const interval = [6, 4, 2.5][this.phase - 1];
+
+    // Cập nhật vị trí mảnh quanh boss
+    this._fmFragments.forEach((frag, k) => {
+      frag.orbitAngle += frag.orbitSpeed * (0.5 + (this.phase - 1) * 0.3) * 0.016;
+      frag.pulseT += 0.016;
+      frag.x = this.x + Math.cos(frag.orbitAngle) * frag.orbitR;
+      frag.y = this.y + Math.sin(frag.orbitAngle) * frag.orbitR;
+    });
+
+    // Chuyển Lõi Thật
+    this._fmCoreSwitchTimer += 0.016;
+    if (this._fmCoreSwitchTimer >= interval) {
+      this._fmCoreSwitchTimer = 0;
+      const prev = this._fmTrueCore;
+      do { this._fmTrueCore = Math.floor(Math.random() * 5); } while (this._fmTrueCore === prev);
+      // Lõi thật pulse sáng 0.15s trước khi xoay
+      this._fmTruePulse = 0.15;
+      Audio.playSFX('flesh_switch');
+    }
+    if (this._fmTruePulse > 0) this._fmTruePulse -= 0.016;
+
+    // Ghi damage reduction — chỉ đòn trúng Lõi Thật mới làm giảm HP
+    this._fmRequireTrueCore = true;
+
+    // Mỗi mảnh bắn đạn (fake mảnh bắn nhiều hơn để đánh lạc)
+    this._fmFragments.forEach((frag, k) => {
+      const isTrue = k === this._fmTrueCore;
+      const isFakeLure = this.phase >= 2 && !isTrue && Math.random() < 0.4;
+      const shotCount = isFakeLure ? 4 : (isTrue ? 2 : 1);
+      if (Math.random() < (isTrue ? 0.6 : 0.3) + (this.phase - 1) * 0.15) {
+        for (let s = 0; s < shotCount; s++) {
+          const baseA = Math.atan2(player.y - frag.y, player.x - frag.x) + (Math.random() - 0.5) * 0.8;
+          Game.spawnProjectile({ x:frag.x, y:frag.y, vx:Math.cos(baseA)*220, vy:Math.sin(baseA)*220,
+            dmg:this.dmg * (isTrue ? 1.1 : 0.7), r:9, life:2.5, color: isTrue ? '#ff6080' : '#aa1030', owner:'enemy' });
+        }
+      }
+      // AoE khi chạm mảnh giả
+      if (!isTrue) {
+        const pd = Math.sqrt((player.x - frag.x)**2 + (player.y - frag.y)**2);
+        if (pd < 28) { player.takeDamage(this.dmg * 0.6); Audio.playSFX('flesh_impact'); }
+      }
+    });
+
+    // Thêm AoE bùn từ boss chính
+    if (this.phase >= 2) {
+      const da = Math.atan2(player.y - this.y, player.x - this.x);
+      Game.spawnProjectile({ x:this.x, y:this.y, vx:Math.cos(da)*180, vy:Math.sin(da)*180,
+        dmg:this.dmg*1.2, r:12, life:3, color:'#cc1040', owner:'enemy' });
+    }
+    if (this.phase === 3) {
+      Game.camera.addShake(10);
+      Audio.playSFX('heartbeat');
+      // Bile pool dưới player
+      if (Math.random() < 0.35) {
+        const bx = player.x + (Math.random()-0.5)*80, by = player.y + (Math.random()-0.5)*80;
+        Game.spawnPoisonZone && Game.spawnPoisonZone(bx, by, 55, 3.5, '#cc2040', 90);
+      }
+    }
+  }
+
   _bossGenericSkill(player) {
     switch (this.phase) {
       case 1:
@@ -10921,8 +11333,8 @@ const Game = (() => {
     const typeKey  = mapTypes[MathU.randInt(0, mapTypes.length - 1)];
     const template = getEnemyTemplate(typeKey, wave);
     
-    const _tierNG = [[1,4],[2,8],[3,13],[5,21],[7,29],[10,40]];
-    const [ngMin, ngMax] = _tierNG[Math.min((currentMap ? currentMap.tier : 1) - 1, 5)];
+    const _tierNG = [[1,4],[2,8],[3,13],[5,21],[7,29],[10,40],[14,55]];
+    const [ngMin, ngMax] = _tierNG[Math.min((currentMap ? currentMap.tier : 1) - 1, 6)];
 
     const e = new Enemy(pos.x, pos.y, {
       ...template,
@@ -10940,8 +11352,8 @@ const Game = (() => {
     const typeKey  = mapTypes[MathU.randInt(0, mapTypes.length - 1)];
     const template = getEnemyTemplate(typeKey, wave);
     
-    const _tierEG = [[8,18],[12,26],[18,36],[25,51],[35,71],[50,100]];
-    const [egMin, egMax] = _tierEG[Math.min((currentMap ? currentMap.tier : 1) - 1, 5)];
+    const _tierEG = [[8,18],[12,26],[18,36],[25,51],[35,71],[50,100],[70,140]];
+    const [egMin, egMax] = _tierEG[Math.min((currentMap ? currentMap.tier : 1) - 1, 6)];
 
     const e = new Enemy(pos.x, pos.y, {
       ...template,
@@ -10973,11 +11385,11 @@ const Game = (() => {
     const pos     = getSpawnPos(true);
     const tier    = mapData.tier || 1;
     
-    const tierBaseHP = [0, 14000, 32000, 68000, 145000, 240000, 400000];
-    const mapHpMult  = {map01:1.00,map02:1.10,map03:1.22,map04:1.00,map05:1.12,map06:1.25,map07:1.00,map08:1.12,map09:1.25,map10:1.00,map11:1.12,map12:1.25,map13:1.00,map14:1.12,map15:1.25,map16:1.00,map17:1.12,map18:1.25};
-    const mapDmgAdd  = {map01:0,map02:12,map03:25,map04:0,map05:15,map06:30,map07:0,map08:18,map09:35,map10:0,map11:22,map12:42,map13:0,map14:28,map15:55,map16:0,map17:30,map18:65};
-    const mapSpdAdd  = {map01:0,map02:15,map03:5,map04:0,map05:10,map06:-10,map07:5,map08:8,map09:0,map10:5,map11:10,map12:5,map13:0,map14:8,map15:5,map16:0,map17:12,map18:8};
-    const mapColor   = {map01:'#5aaa5a',map02:'#9a7aaa',map03:'#4aaa2a',map04:'#c8960c',map05:'#ff5010',map06:'#60aacc',map07:'#8888ff',map08:'#aa40ff',map09:'#3060cc',map10:'#60aacc',map11:'#cc40ff',map12:'#88aaff',map13:'#aaddff',map14:'#ff2000',map15:'#6040ff',map16:'#cc80ff',map17:'#4400cc',map18:'#00d4ff'};
+    const tierBaseHP = [0, 14000, 32000, 68000, 145000, 240000, 400000, 600000, 900000];
+    const mapHpMult  = {map01:1.00,map02:1.10,map03:1.22,map04:1.00,map05:1.12,map06:1.25,map07:1.00,map08:1.12,map09:1.25,map10:1.00,map11:1.12,map12:1.25,map13:1.00,map14:1.12,map15:1.25,map16:1.00,map17:1.12,map18:1.25,map19:1.00,map20:1.15,map21:1.30};
+    const mapDmgAdd  = {map01:0,map02:12,map03:25,map04:0,map05:15,map06:30,map07:0,map08:18,map09:35,map10:0,map11:22,map12:42,map13:0,map14:28,map15:55,map16:0,map17:30,map18:65,map19:60,map20:95,map21:135};
+    const mapSpdAdd  = {map01:0,map02:15,map03:5,map04:0,map05:10,map06:-10,map07:5,map08:8,map09:0,map10:5,map11:10,map12:5,map13:0,map14:8,map15:5,map16:0,map17:12,map18:8,map19:5,map20:10,map21:0};
+    const mapColor   = {map01:'#5aaa5a',map02:'#9a7aaa',map03:'#4aaa2a',map04:'#c8960c',map05:'#ff5010',map06:'#60aacc',map07:'#8888ff',map08:'#aa40ff',map09:'#3060cc',map10:'#60aacc',map11:'#cc40ff',map12:'#88aaff',map13:'#aaddff',map14:'#ff2000',map15:'#6040ff',map16:'#cc80ff',map17:'#4400cc',map18:'#00d4ff',map19:'#8060ff',map20:'#ffe060',map21:'#ff2050'};
     const hpMult  = mapHpMult[mapData.id]  || 1;
     const dmgAdd  = mapDmgAdd[mapData.id]  || 0;
     const spdAdd  = mapSpdAdd[mapData.id]  || 0;
@@ -11084,6 +11496,21 @@ const Game = (() => {
       annihilator:  { hp:1100, dmg:215, spd:115, r:16, exp:13, icon:'💠', color:'#0040aa', ai:'chase' },
       executor:     { hp:800,  dmg:235, spd:95,  r:13, exp:12, icon:'⚡', color:'#0080ff', ai:'flank', flankDir:-1 },
       obliterator:  { hp:550,  dmg:255, spd:60,  r:14, exp:12, icon:'🔷', color:'#00c0ff', ai:'ranged' },
+
+      // map19 — Rừng Tinh Thể
+      crystal_golem:    { hp:1400, dmg:270, spd:45,  r:20, exp:14, icon:'💠', color:'#4060cc', ai:'chase',  _crystalReflect:true },
+      prism_shade:      { hp:850,  dmg:265, spd:120, r:13, exp:13, icon:'🔷', color:'#8060ff', ai:'flank',  flankDir:1, _prismSplit:true },
+      resonance_mage:   { hp:720,  dmg:285, spd:55,  r:14, exp:13, icon:'✨', color:'#60a0ff', ai:'ranged', _resonanceBuff:true },
+
+      // map20 — Đền Thời Khắc
+      time_knight:      { hp:1350, dmg:260, spd:80,  r:17, exp:14, icon:'⚔️', color:'#c0a000', ai:'chase',  _timeShadow:true },
+      hourglass_mage:   { hp:700,  dmg:280, spd:65,  r:13, exp:13, icon:'⌛', color:'#e0c060', ai:'ranged', _hourglassSlow:true },
+      temporal_wraith:  { hp:320,  dmg:295, spd:200, r:11, exp:13, icon:'👻', color:'#ffe080', ai:'flank',  flankDir:-1, _temporalBlink:true },
+
+      // map21 — Vực Thịt Sống
+      flesh_crawler:    { hp:850,  dmg:265, spd:140, r:12, exp:13, icon:'🐛', color:'#cc2040', ai:'chase',  _fleshBurrow:true },
+      bile_spitter:     { hp:800,  dmg:245, spd:60,  r:14, exp:14, icon:'🤢', color:'#80c020', ai:'ranged', _bilePool:true },
+      meat_titan:       { hp:2400, dmg:285, spd:40,  r:24, exp:17, icon:'🫀', color:'#ff1040', ai:'chase',  _meatSpawn:true },
     };
     return templates[typeKey] || templates['zombie'];
   }
@@ -11261,7 +11688,7 @@ const Game = (() => {
         break;
 
       case 'ascensionMode':
-        
+        // ... existing code unchanged ...
         if (!window._ascensionTimer) window._ascensionTimer = 0;
         if (!window._ascensionStacks) window._ascensionStacks = 0;
         window._ascensionTimer += dt;
@@ -11282,6 +11709,134 @@ const Game = (() => {
           }
           Toast.show(`💠 SIÊU VIỆT THỂ ×${window._ascensionStacks} — Quái mạnh hơn 20%!`, 3000);
           Audio.playSFX('evolve');
+        }
+        break;
+
+      case 'crystalResonance':
+        if (!window._crTimer) window._crTimer = 0;
+        if (!window._crActive) window._crActive = false;
+        if (!window._crDuration) window._crDuration = 0;
+        if (!window._crNodes) window._crNodes = [];
+        window._crTimer += dt;
+        if (window._crTimer >= 25 && !window._crActive) {
+          window._crTimer = 0;
+          window._crActive = true;
+          window._crDuration = 4.0;
+          // Tạo 4–6 tinh thể node ngẫu nhiên
+          const nodeCount = 4 + MathU.randInt(0, 2);
+          window._crNodes = Array.from({length: nodeCount}, () => ({
+            x: MathU.rand(120, CFG.WORLD_W - 120),
+            y: MathU.rand(120, CFG.WORLD_H - 120),
+            warn: 0.8,
+          }));
+          window._crWarn = 0.8; // warning phase trước khi bắn
+          Toast.show('💎 CỘNG HƯỞNG TINH THỂ — Tránh các tia lam!', 3000);
+          Audio.playSFX('crystal_laser');
+        }
+        if (window._crActive) {
+          window._crDuration -= dt;
+          if (window._crWarn > 0) {
+            window._crWarn -= dt;
+          } else {
+            // Laser đang hoạt động — gây damage player nếu trong đường nối
+            const nodes = window._crNodes;
+            for (let i = 0; i < nodes.length; i++) {
+              const a = nodes[i], b = nodes[(i+1) % nodes.length];
+              // Kiểm tra khoảng cách player đến line segment
+              const dx = b.x - a.x, dy = b.y - a.y;
+              const len2 = dx*dx + dy*dy;
+              if (len2 < 1) continue;
+              const t2 = Math.max(0, Math.min(1, ((player.x - a.x)*dx + (player.y - a.y)*dy) / len2));
+              const nx = a.x + t2*dx, ny = a.y + t2*dy;
+              const dist = Math.sqrt((player.x-nx)**2 + (player.y-ny)**2);
+              if (dist < 22) {
+                player.takeDamage(80 * dt);
+                Audio.playSFX('hit');
+              }
+            }
+          }
+          if (window._crDuration <= 0) {
+            window._crActive = false;
+            // Rơi exp gem tại các node
+            window._crNodes.forEach(n => {
+              Game.particles && Game.particles.spawn(n.x, n.y, { count:8, color:'#60c0ff', speedMin:60, speedMax:180, life:0.6 });
+            });
+            window._crNodes = [];
+            Audio.playSFX('crystal_shatter');
+            Toast.show('💎 Tinh thể vỡ — exp gem rơi ra!');
+          }
+        }
+        break;
+
+      case 'timeDistortion':
+        if (!window._tdTimer) window._tdTimer = 0;
+        if (!window._timeRevActive) window._timeRevActive = false;
+        if (!window._timeRevTimer) window._timeRevTimer = 0;
+        window._tdTimer += dt;
+        if (window._tdTimer >= 40 && !window._timeRevActive) {
+          window._tdTimer = 0;
+          window._timeRevActive = true;
+          window._timeRevTimer = 3.0;
+          // Đảo ngược tất cả đạn địch đang bay
+          if (Game.projectiles) {
+            Game.projectiles.forEach(p2 => {
+              if (p2.owner === 'enemy' && !p2.dead) {
+                p2.vx = -p2.vx; p2.vy = -p2.vy;
+              }
+            });
+          }
+          Toast.show('⌛ NGHỊCH LƯU THỜI GIAN — Đạn đảo ngược 3 giây!', 2500);
+          Audio.playSFX('time_reverse');
+          Game.camera.addShake(10);
+        }
+        if (window._timeRevActive) {
+          window._timeRevTimer -= dt;
+          if (window._timeRevTimer <= 0) {
+            window._timeRevActive = false;
+            Toast.show('⌛ Thời gian phục hồi bình thường.');
+          }
+        }
+        break;
+
+      case 'livingFlesh':
+        if (!window._lfBreathTimer) window._lfBreathTimer = 0;
+        if (!window._lfContracting) window._lfContracting = false;
+        if (!window._lfContractDur) window._lfContractDur = 0;
+        if (!window._lfScale) window._lfScale = 1.0;
+        window._lfBreathTimer += dt;
+        if (window._lfBreathTimer >= 15 && !window._lfContracting) {
+          window._lfBreathTimer = 0;
+          window._lfContracting = true;
+          window._lfContractDur = 3.0;
+          window._lfScale = 0.85;
+          Toast.show('🫀 ARENA CO LẠI — +20% ST | +40% quái trong 3 giây!', 2500);
+          Audio.playSFX('heartbeat');
+          // Spawn quái bổ sung
+          const extra = 3 + (currentMap ? currentMap.difficulty : 1);
+          for (let i = 0; i < extra && enemies.length < CFG.MAX_ENEMIES; i++) setTimeout(() => { if(running) spawnEnemy(); }, i * 200);
+        }
+        if (window._lfContracting) {
+          window._lfContractDur -= dt;
+          // Clamp player vào arena thu nhỏ
+          const margin = 30;
+          const cW = CFG.WORLD_W * window._lfScale;
+          const cH = CFG.WORLD_H * window._lfScale;
+          const offX = (CFG.WORLD_W - cW) / 2, offY = (CFG.WORLD_H - cH) / 2;
+          player.x = MathU.clamp(player.x, offX + margin, offX + cW - margin);
+          player.y = MathU.clamp(player.y, offY + margin, offY + cH - margin);
+          // Áp damage cho quái chạm biên
+          enemies.forEach(e => {
+            if (!e.dead) {
+              e.x = MathU.clamp(e.x, offX + 10, offX + cW - 10);
+              e.y = MathU.clamp(e.y, offY + 10, offY + cH - 10);
+            }
+          });
+          if (window._lfContractDur <= 0) {
+            window._lfContracting = false;
+            window._lfScale = 1.0;
+            Audio.playSFX('heartbeat');
+            Toast.show('🫀 Arena phồng lại.');
+          }
         }
         break;
     }
@@ -14440,6 +14995,7 @@ const Game = (() => {
       'village','forest','swamp','ruins','desert','ice',
       'graveyard','tower','blood','mech','chaos','storm',
       'mirror','hell','cosmos','tomb','abyss','apex',
+      'crystal','timple','flesh',
     ].includes(currentMap.bgPattern);
 
     if (!hasCustomBg) {
@@ -14490,6 +15046,9 @@ const Game = (() => {
     else if (_bgPat === 'tomb')      _drawMap16Layers(camX, camY, W, H, _bgT);
     else if (_bgPat === 'abyss')     _drawMap17Layers(camX, camY, W, H, _bgT);
     else if (_bgPat === 'apex')      _drawMap18Layers(camX, camY, W, H, _bgT);
+    else if (_bgPat === 'crystal')   _drawMap19Layers(camX, camY, W, H, _bgT);
+    else if (_bgPat === 'timple')    _drawMap20Layers(camX, camY, W, H, _bgT);
+    else if (_bgPat === 'flesh')     _drawMap21Layers(camX, camY, W, H, _bgT);
 
     
     
@@ -14594,6 +15153,303 @@ const Game = (() => {
     ctx.strokeRect(bx, by, CFG.WORLD_W, CFG.WORLD_H);
     ctx.setLineDash([]);
     ctx.shadowBlur = 0;
+  }
+
+  // ── MAP 19: Rừng Tinh Thể background ──────────────────────────────
+  function _drawMap19Layers(camX, camY, W, H, t) {
+    // Nền đêm tím sâu
+    ctx.fillStyle = '#02000e'; ctx.fillRect(0, 0, W, H);
+
+    // Stars tinh thể lam nhỏ phía sau (parallax chậm)
+    const starOff = ((camX * 0.04) % W + W) % W;
+    ctx.globalAlpha = 0.55;
+    for (let pass = -1; pass <= 1; pass++) {
+      const ox = -starOff + pass * W;
+      for (let i = 0; i < 40; i++) {
+        const sx2 = ox + (i * 317 + 50) % W;
+        const sy2 = (i * 193 + 30) % H;
+        const sp = 0.4 + 0.6 * Math.abs(Math.sin(t * 0.0008 + i * 0.7));
+        ctx.fillStyle = `rgba(100,160,255,${sp * 0.6})`;
+        ctx.beginPath(); ctx.arc(sx2, sy2, 1.5, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // Trụ tinh thể lớn (parallax trung bình)
+    const pillarOff = ((camX * 0.18) % W + W) % W;
+    ctx.globalAlpha = 0.72;
+    for (let pass = -1; pass <= 1; pass++) {
+      const ox = -pillarOff + pass * W;
+      for (let i = 0; i < 9; i++) {
+        const px2 = ox + (i * 211 + 30) % W;
+        const py2 = H * 0.75;
+        const ph = 80 + (i % 4) * 30;
+        const pw = 14 + (i % 3) * 8;
+        const pulse = 0.5 + 0.5 * Math.sin(t * 0.0009 + i * 1.3);
+        // Thân trụ
+        const gPillar = ctx.createLinearGradient(px2, py2 - ph, px2, py2);
+        gPillar.addColorStop(0, `rgba(80,100,220,${pulse * 0.9})`);
+        gPillar.addColorStop(0.5, `rgba(40,60,160,${pulse * 0.6})`);
+        gPillar.addColorStop(1, 'rgba(10,10,40,0)');
+        ctx.fillStyle = gPillar;
+        ctx.save(); ctx.translate(px2, py2 - ph / 2);
+        ctx.beginPath();
+        ctx.moveTo(-pw / 2, -ph / 2); ctx.lineTo(0, -ph / 2 - 18);
+        ctx.lineTo(pw / 2, -ph / 2); ctx.lineTo(pw / 2 + 4, ph / 2);
+        ctx.lineTo(-pw / 2 - 4, ph / 2); ctx.closePath(); ctx.fill();
+        // Glow lõi
+        const gGlow = ctx.createRadialGradient(0, -ph / 2 - 5, 0, 0, -ph / 2 - 5, pw * 1.2);
+        gGlow.addColorStop(0, `rgba(140,180,255,${pulse * 0.7})`);
+        gGlow.addColorStop(1, 'rgba(60,80,200,0)');
+        ctx.fillStyle = gGlow; ctx.fillRect(-pw * 1.5, -ph / 2 - pw * 1.5, pw * 3, pw * 3);
+        ctx.restore();
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // Laser lưới tinh thể active (khi crystalResonance đang cộng hưởng)
+    if (window._crActive && window._crNodes && window._crNodes.length > 1 && (window._crWarn || 0) <= 0) {
+      const nodes = window._crNodes;
+      const lAlpha = 0.6 + 0.3 * Math.sin(t * 0.015);
+      ctx.strokeStyle = `rgba(100,200,255,${lAlpha})`;
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#60d0ff'; ctx.shadowBlur = 18;
+      ctx.beginPath();
+      nodes.forEach((n, idx) => {
+        const nx = n.x - camX, ny = n.y - camY;
+        idx === 0 ? ctx.moveTo(nx, ny) : ctx.lineTo(nx, ny);
+      });
+      ctx.closePath(); ctx.stroke();
+      ctx.shadowBlur = 0;
+      // Node diamonds
+      nodes.forEach(n => {
+        const nx = n.x - camX, ny = n.y - camY;
+        ctx.fillStyle = `rgba(160,220,255,${lAlpha})`;
+        ctx.save(); ctx.translate(nx, ny); ctx.rotate(Math.PI / 4);
+        ctx.fillRect(-8, -8, 16, 16); ctx.restore();
+      });
+    } else if (window._crActive && (window._crWarn || 0) > 0 && window._crNodes) {
+      // Cảnh báo — nhấp nháy vàng
+      const wAlpha = 0.3 + 0.3 * Math.sin(t * 0.03);
+      window._crNodes.forEach(n => {
+        const nx = n.x - camX, ny = n.y - camY;
+        const gW = ctx.createRadialGradient(nx, ny, 0, nx, ny, 40);
+        gW.addColorStop(0, `rgba(255,220,60,${wAlpha * 1.5})`);
+        gW.addColorStop(1, 'rgba(255,180,0,0)');
+        ctx.fillStyle = gW; ctx.fillRect(nx - 40, ny - 40, 80, 80);
+      });
+    }
+
+    // Caustic light — ánh sáng khúc xạ di động trên sàn
+    const causticOff = ((camX * 0.55) % W + W) % W;
+    ctx.globalAlpha = 0.18;
+    for (let pass = -1; pass <= 1; pass++) {
+      const ox = -causticOff + pass * W;
+      for (let i = 0; i < 12; i++) {
+        const cx2 = ox + (i * 171 + t * 0.012 + i * 7) % W;
+        const cy2 = H * 0.65 + Math.sin(t * 0.0006 + i * 0.9) * 30;
+        const cR = 18 + Math.sin(t * 0.0011 + i) * 8;
+        const gC = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, cR);
+        gC.addColorStop(0, 'rgba(100,180,255,0.8)');
+        gC.addColorStop(1, 'rgba(60,100,200,0)');
+        ctx.fillStyle = gC; ctx.fillRect(cx2 - cR, cy2 - cR, cR * 2, cR * 2);
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // Ambient glow tím lam nền
+    const ambG = ctx.createRadialGradient(W * 0.5, H * 0.3, 0, W * 0.5, H * 0.3, H * 0.55);
+    ambG.addColorStop(0, `rgba(80,60,200,${0.08 + 0.04 * Math.sin(t * 0.0007)})`);
+    ambG.addColorStop(1, 'rgba(20,0,60,0)');
+    ctx.fillStyle = ambG; ctx.fillRect(0, 0, W, H);
+
+    // Sàn tối
+    const floorG = ctx.createLinearGradient(0, H * 0.68, 0, H);
+    floorG.addColorStop(0, 'rgba(4,0,20,0.95)'); floorG.addColorStop(1, 'rgba(2,0,12,1)');
+    ctx.fillStyle = floorG; ctx.fillRect(0, H * 0.68, W, H * 0.32);
+  }
+
+  // ── MAP 20: Đền Thời Khắc background ──────────────────────────────
+  function _drawMap20Layers(camX, camY, W, H, t) {
+    ctx.fillStyle = '#0c0800'; ctx.fillRect(0, 0, W, H);
+
+    // Cột đền vàng cổ (parallax xa)
+    const colOff = ((camX * 0.10) % W + W) % W;
+    ctx.globalAlpha = 0.55;
+    for (let pass = -1; pass <= 1; pass++) {
+      const ox = -colOff + pass * W;
+      for (let i = 0; i < 7; i++) {
+        const cx2 = ox + (i * 240 + 60) % W;
+        const cy2 = H * 0.72;
+        const ch = 90 + (i % 3) * 35; const cw = 18 + (i % 2) * 8;
+        const gCol = ctx.createLinearGradient(cx2, cy2 - ch, cx2, cy2);
+        gCol.addColorStop(0, 'rgba(200,160,40,0.8)');
+        gCol.addColorStop(0.6, 'rgba(120,80,10,0.5)');
+        gCol.addColorStop(1, 'rgba(40,20,0,0)');
+        ctx.fillStyle = gCol;
+        ctx.fillRect(cx2 - cw / 2, cy2 - ch, cw, ch);
+        // Mũ cột
+        ctx.fillStyle = 'rgba(220,180,60,0.7)';
+        ctx.fillRect(cx2 - cw * 0.8, cy2 - ch - 8, cw * 1.6, 10);
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // Đồng hồ cát khổng lồ ở background trung tâm
+    {
+      const hx = W * 0.5, hy = H * 0.22;
+      const hPulse = 0.6 + 0.3 * Math.sin(t * 0.0006);
+      ctx.globalAlpha = hPulse * 0.45;
+      // Khung trên
+      ctx.strokeStyle = 'rgba(220,180,60,0.8)'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(hx - 50, hy - 55); ctx.lineTo(hx + 50, hy - 55);
+      ctx.lineTo(hx + 10, hy); ctx.lineTo(hx - 10, hy); ctx.closePath(); ctx.stroke();
+      // Khung dưới
+      ctx.beginPath(); ctx.moveTo(hx - 50, hy + 55); ctx.lineTo(hx + 50, hy + 55);
+      ctx.lineTo(hx + 10, hy); ctx.lineTo(hx - 10, hy); ctx.closePath(); ctx.stroke();
+      // Cát chảy
+      const sandY = (t * 0.015) % 50;
+      const gSand = ctx.createLinearGradient(hx, hy - 40, hx, hy + 40);
+      gSand.addColorStop(0, 'rgba(240,200,80,0.8)'); gSand.addColorStop(1, 'rgba(180,120,20,0)');
+      ctx.fillStyle = gSand;
+      ctx.beginPath(); ctx.ellipse(hx, hy - 20 + sandY, 6, 14, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    // Sóng thời gian — vòng lăn vàng từ trung tâm
+    for (let i = 0; i < 4; i++) {
+      const waveR = ((t * 0.08 + i * 80) % 220);
+      const wAlpha = Math.max(0, 0.25 - waveR * 0.001);
+      ctx.strokeStyle = `rgba(255,210,60,${wAlpha})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(W * 0.5, H * 0.5, waveR, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    // Distortion active indicator
+    if (window._timeRevActive) {
+      const revAlpha = 0.12 + 0.08 * Math.sin(t * 0.025);
+      ctx.fillStyle = `rgba(255,240,100,${revAlpha})`;
+      ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = `rgba(255,200,50,${revAlpha * 2})`;
+      ctx.lineWidth = 3; ctx.setLineDash([15, 8]);
+      ctx.strokeRect(10, 10, W - 20, H - 20); ctx.setLineDash([]);
+    }
+
+    // Bóng ghost pha — vị trí ghost trong _tdGhosts
+    const boss = Game && Game.enemies && Game.enemies.find(e => e.isBoss && !e.dead);
+    if (boss && boss._tdGhosts) {
+      boss._tdGhosts.forEach(g => {
+        const gx = g.x - camX, gy = g.y - camY;
+        const gAlpha = 0.3 + 0.15 * Math.sin(t * 0.012);
+        ctx.globalAlpha = gAlpha;
+        ctx.fillStyle = '#ffe060'; ctx.font = '28px serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('⌛', gx, gy);
+        const gGlow = ctx.createRadialGradient(gx, gy, 0, gx, gy, 45);
+        gGlow.addColorStop(0, `rgba(255,220,60,${gAlpha * 0.5})`);
+        gGlow.addColorStop(1, 'rgba(200,160,0,0)');
+        ctx.fillStyle = gGlow; ctx.fillRect(gx - 45, gy - 45, 90, 90);
+        ctx.globalAlpha = 1;
+      });
+    }
+
+    // Nền sàn đất sét vàng nâu
+    const floorG = ctx.createLinearGradient(0, H * 0.68, 0, H);
+    floorG.addColorStop(0, 'rgba(24,14,0,0.97)'); floorG.addColorStop(1, 'rgba(12,6,0,1)');
+    ctx.fillStyle = floorG; ctx.fillRect(0, H * 0.68, W, H * 0.32);
+
+    // Grid tường gạch cổ
+    const gridOff = ((camX * 0.7) % 56 + 56) % 56;
+    ctx.strokeStyle = `rgba(100,70,10,${0.12 + 0.04 * Math.sin(t * 0.0005)})`;
+    ctx.lineWidth = 0.7;
+    for (let gx2 = gridOff - 56; gx2 < W + 56; gx2 += 56) {
+      ctx.beginPath(); ctx.moveTo(gx2, H * 0.68); ctx.lineTo(gx2, H); ctx.stroke();
+    }
+  }
+
+  // ── MAP 21: Vực Thịt Sống background ──────────────────────────────
+  function _drawMap21Layers(camX, camY, W, H, t) {
+    ctx.fillStyle = '#120004'; ctx.fillRect(0, 0, W, H);
+
+    // Nhịp tim toàn màn — pulse theo sin
+    const heartPhase = (Math.sin(t * 0.012) + 1) * 0.5;
+    const heartAlpha = 0.04 + heartPhase * 0.06;
+    ctx.fillStyle = `rgba(180,0,30,${heartAlpha})`; ctx.fillRect(0, 0, W, H);
+
+    // Gân máu sàn (parallax trung bình)
+    const veinOff = ((camX * 0.28) % W + W) % W;
+    ctx.globalAlpha = 0.55;
+    for (let pass = -1; pass <= 1; pass++) {
+      const ox = -veinOff + pass * W;
+      for (let i = 0; i < 10; i++) {
+        const vx2 = ox + (i * 199 + 40) % W;
+        const vy2 = H * 0.5 + Math.sin(t * 0.0004 + i * 0.8) * H * 0.2;
+        const vLen = 120 + (i % 4) * 40;
+        const vAlpha = 0.3 + 0.2 * heartPhase;
+        ctx.strokeStyle = `rgba(180,20,40,${vAlpha})`;
+        ctx.lineWidth = 2 + (i % 3);
+        ctx.beginPath();
+        ctx.moveTo(vx2, vy2);
+        for (let k = 0; k < 6; k++) {
+          ctx.lineTo(vx2 + k * (vLen / 6) + Math.sin(k + i) * 15,
+                     vy2 + Math.sin(k * 0.8 + t * 0.0004 + i) * 25);
+        }
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // Thịt nổi — bumps co bóp
+    const bumpOff = ((camX * 0.45) % W + W) % W;
+    ctx.globalAlpha = 0.45;
+    for (let pass = -1; pass <= 1; pass++) {
+      const ox = -bumpOff + pass * W;
+      for (let i = 0; i < 14; i++) {
+        const bx2 = ox + (i * 157 + 20) % W;
+        const by2 = H * 0.62 + Math.sin(t * 0.0005 + i * 1.1) * H * 0.1;
+        const bR = (18 + (i % 4) * 7) * (0.85 + 0.15 * heartPhase);
+        const gBump = ctx.createRadialGradient(bx2, by2, 0, bx2, by2, bR);
+        gBump.addColorStop(0, `rgba(200,40,60,${0.6 + 0.3 * heartPhase})`);
+        gBump.addColorStop(0.6, `rgba(120,10,30,0.4)`);
+        gBump.addColorStop(1, 'rgba(60,0,10,0)');
+        ctx.fillStyle = gBump;
+        ctx.beginPath(); ctx.ellipse(bx2, by2, bR * 1.1, bR * 0.75, Math.sin(i) * 0.4, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // Arena co lại indicator
+    if (window._lfContracting && window._lfScale) {
+      const sc = window._lfScale;
+      const cW2 = CFG.WORLD_W * sc, cH2 = CFG.WORLD_H * sc;
+      const offX2 = (CFG.WORLD_W - cW2) / 2 - camX;
+      const offY2 = (CFG.WORLD_H - cH2) / 2 - camY;
+      const bAlpha = 0.5 + 0.3 * Math.sin(t * 0.02);
+      ctx.strokeStyle = `rgba(255,20,60,${bAlpha})`; ctx.lineWidth = 5;
+      ctx.shadowColor = '#ff0030'; ctx.shadowBlur = 15;
+      ctx.setLineDash([16, 6]);
+      ctx.strokeRect(offX2, offY2, cW2, cH2);
+      ctx.setLineDash([]); ctx.shadowBlur = 0;
+      // Vùng tối ngoài biên
+      ctx.fillStyle = `rgba(60,0,10,0.35)`;
+      ctx.fillRect(0, 0, offX2, H);
+      ctx.fillRect(offX2 + cW2, 0, W - offX2 - cW2, H);
+      ctx.fillRect(offX2, 0, cW2, offY2);
+      ctx.fillRect(offX2, offY2 + cH2, cW2, H - offY2 - cH2);
+    }
+
+    // Bóng tường thịt viền arena co bóp
+    const wallPulse = 0.7 + 0.3 * heartPhase;
+    const wallG = ctx.createLinearGradient(0, H * 0.66, 0, H);
+    wallG.addColorStop(0, `rgba(30,0,8,${wallPulse * 0.95})`);
+    wallG.addColorStop(1, `rgba(16,0,4,1)`);
+    ctx.fillStyle = wallG; ctx.fillRect(0, H * 0.66, W, H * 0.34);
+
+    // Ambient đỏ trung tâm
+    const aG = ctx.createRadialGradient(W * 0.5, H * 0.4, 0, W * 0.5, H * 0.4, H * 0.5);
+    aG.addColorStop(0, `rgba(100,0,20,${0.06 + heartPhase * 0.06})`);
+    aG.addColorStop(1, 'rgba(30,0,5,0)');
+    ctx.fillStyle = aG; ctx.fillRect(0, 0, W, H);
   }
 
   function drawPoisonZones(camX, camY) {
